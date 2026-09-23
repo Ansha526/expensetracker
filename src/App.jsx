@@ -4,6 +4,7 @@ import SummaryCards from "./components/SummaryCards";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
 import Charts from "./components/Charts";
+import axios from "axios";
 
 function App() {
   const [transactions, setTransactions] = useState(() => {
@@ -48,6 +49,7 @@ function App() {
       },
     ];
   });
+
 
   useEffect(() => {
     localStorage.setItem(
@@ -103,6 +105,24 @@ function App() {
       balance: income - expense,
     };
   }, [transactions]);
+
+
+
+
+      async function fetchProducts(){
+    try{
+      const productRes =await axios.get("http://localhost:5050/products");
+      console.log(productRes.data);
+    }
+    catch (err){
+      console.log(err);
+    }
+  }
+
+  useEffect(() =>{
+    fetchProducts();
+  })
+
 
   return (
     <div className="min-h-screen bg-slate-50">
