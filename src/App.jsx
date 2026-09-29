@@ -1,192 +1,100 @@
-import { useEffect, useMemo, useState } from "react";
-import Header from "./components/Header";
-import SummaryCards from "./components/SummaryCards";
-import TransactionForm from "./components/TransactionForm";
-import TransactionList from "./components/TransactionList";
-import Charts from "./components/Charts";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 function App() {
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem("expenseTracker");
-
-    if (saved) {
-      return JSON.parse(saved);
-    }
-
-    return [
-      {
-        id: 1,
-        title: "Monthly Salary",
-        amount: 60000,
-        type: "income",
-        category: "Salary",
-        date: "2026-09-01",
-      },
-      {
-        id: 2,
-        title: "Grocery Shopping",
-        amount: 8500,
-        type: "expense",
-        category: "Food",
-        date: "2026-09-04",
-      },
-      {
-        id: 3,
-        title: "Internet Bill",
-        amount: 3000,
-        type: "expense",
-        category: "Bills",
-        date: "2026-09-06",
-      },
-      {
-        id: 4,
-        title: "Freelance Project",
-        amount: 12000,
-        type: "income",
-        category: "Freelance",
-        date: "2026-09-08",
-      },
-    ];
+  const [products, setProducts] = useState([]);
+  const [newProductInfo, setNewProductInfo] = useState({
+    id: "",
+    name: "",
+    price: 0,
+    description: "",
+    imageUrl: "",
   });
 
+  const handleProductInfoChange = (e) => {
+    setNewProductInfo((prev) => ({...prev, [e.target.name] : e.target.value }));
+  };
+
+
+
+  async function fetchProducts() {
+    try {
+      console.log("1. API calling...");
+
+      const response = await fetch("http://localhost:5050/products");
+      setProducts(productRes.data);
+      console.log(productRes.data)
+
+
+      console.log("2. Response received:", response);
+      console.log("3. Status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log("4. API DATA:", data);
+
+      setProducts(data);
+    } catch (error) {
+      console.error("5. API ERROR:", error);
+    }
+  }
 
   useEffect(() => {
-    localStorage.setItem(
-      "expenseTracker",
-      JSON.stringify(transactions)
-    );
-  }, [transactions]);
+    fetchProducts();
+  }, []);
 
-  const addTransaction = (newTransaction) => {
-    setTransactions((prev) => [
-      {
-        ...newTransaction,
-        id: Date.now(),
-      },
-      ...prev,
-    ]);
-  };
-
-  const deleteTransaction = (id) => {
-    setTransactions((prev) =>
-      prev.filter((item) => item.id !== id)
-    );
-  };
-
-  const editTransaction = (updatedTransaction) => {
-    setTransactions((prev) =>
-      prev.map((item) =>
-        item.id === updatedTransaction.id
-          ? updatedTransaction
-          : item
-      )
-    );
-  };
-
-  const totals = useMemo(() => {
-    const income = transactions
-      .filter((item) => item.type === "income")
-      .reduce(
-        (total, item) => total + Number(item.amount),
-        0
-      );
-
-    const expense = transactions
-      .filter((item) => item.type === "expense")
-      .reduce(
-        (total, item) => total + Number(item.amount),
-        0
-      );
-
-    return {
-      income,
-      expense,
-      balance: income - expense,
-    };
-  }, [transactions]);
-
-
-
-
-      async function fetchProducts(){
-    try{
-      const productRes =await axios.get("http://localhost:5050/products");
-      console.log(productRes.data);
+  async function addProduct(e) {
+    e.preventDefault();
+    try {
+      await axios.post("http://localhost:5050/products", newProductInfo);
+      alert ("Product Added")
+    }  
+    catch (err) {
+      console.log(err)
     }
-    catch (err){
+  }
+
+  async function deleteProduct(id) {
+    try{
+      await axios.delete(`http//localhost:5050/products/${id}`);
+      alert ("Product Deleted");
+    }
+    catch (err) {
       console.log(err);
     }
   }
 
-  useEffect(() =>{
-    fetchProducts();
-  })
-
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
+      <h1 className="text-3xl font-bold p-5">
+        Expense Tracker
+      </h1>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <form onSubmit={addProduct}> 
+        <input type="text" name="id" id="id" placeholder="Enter your id" onChange={handleProductInfoChange} />
+        <input type="text" name="name" id="name"  placeholder="Enter your name" onChange={handleProductInfoChange} />
+        <input type="number" name="price" id="price"  placeholder="Enter your price" onChange={handleProductInfoChange} />
+        <input type="text" name="imageUrl" id="imageUrl" placeholder="Enter your image url" onChange={handleProductInfoChange} />
+        <input type="text" name="description" id="description" placeholder="Enter your Description" onChange={handleProductInfoChange} />
+        <button type="submit">save</button>
+      </form>
 
-        {/* Welcome */}
-        <section className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-center">
-          <div>
-            <p className="mb-2 text-sm font-bold tracking-widest text-indigo-600">
-              PERSONAL FINANCE
-            </p>
+      <div className="p-5">
+        <h2 className="text-xl font-bold mb-3">
+          API Products
+        </h2>
 
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-              Expense Tracker
-            </h1>
-
-            <p className="mt-2 text-slate-500">
-              Manage your income and expenses easily.
-            </p>
+        {products.map((product) => (
+          <div key={product.id} className="p-3 border mb-2">
+            {product.name}
           </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
-            <p className="text-xs text-slate-400">
-              Today
-            </p>
-
-            <p className="font-semibold text-slate-800">
-              {new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-        </section>
-
-        {/* Summary */}
-        <SummaryCards totals={totals} />
-
-        {/* Form + Transactions */}
-        <section className="mt-6 grid gap-6 lg:grid-cols-5">
-
-          <div className="lg:col-span-2">
-            <TransactionForm
-              onAdd={addTransaction}
-            />
-          </div>
-
-          <div className="lg:col-span-3">
-            <TransactionList
-              transactions={transactions}
-              onDelete={deleteTransaction}
-              onEdit={editTransaction}
-            />
-          </div>
-
-        </section>
-
-        {/* Charts */}
-        <Charts transactions={transactions} />
-
-      </main>
+        ))}
+      </div>
     </div>
   );
 }
